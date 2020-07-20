@@ -1,0 +1,189 @@
+
+         
+  public class Main{
+    public void generate(int num)
+    {
+        Point[] array=new Point[num];
+        //生成num个点，每个点的坐标x和y精度保留两位小数，范围在1到10000之间
+        for(int i=0;i<num;i++)
+        {
+            double x=1+(10000-1)*Math.random();
+            x=(double) Math.round(x*100) / 100;
+            double y=1+(10000-1)*Math.random();
+            y=(double) Math.round(y*100) / 100;
+            array[i]=new Point(x,y);
+        }
+        //蛮力法求所有点对的最小距离
+        minest(array);
+        //分治法求所有点对的最小距离
+        betterminest(array);
+
+    }
+    public void quicksort(Point[] array)
+    {
+        quicksort(array,0,array.length-1);
+    }
+    public void quicksort(Point[] array,int lo,int hi)
+    {
+        if(lo>=hi)
+            return ;
+        int cut=part(array,lo,hi);
+        quicksort(array,lo,cut-1);
+        quicksort(array,cut+1,hi);
+    }
+    public int part(Point[] array,int lo,int hi)
+    {
+        double value=array[lo].x;
+        int i=lo;
+        int j=hi+1;
+        while(true)
+        {
+            while(array[i++].x<=value)
+            {
+                if(i==hi)
+                    break;
+            }
+            while(array[--j].x>=value)
+            {
+                if(j==lo)
+                    break;
+            }
+            Point tempt=array[i];
+            array[i]=array[j];
+            array[j]=tempt;
+            if(j<=i)
+                break;
+        }
+        Point tempt=array[lo];
+        array[lo]=array[j];
+        array[j]=tempt;
+        return j;
+    }
+    public void betterminest(Point[] array)
+    {
+        long starttime=System.currentTimeMillis();
+        //先将数组按照x由小到大排序
+        quicksort(array);
+        double miner=betterminest(array,0,array.length-1);
+        long endtime=System.currentTimeMillis();
+        System.out.println("分治法在数据规模为"+array.length+"的条件下运行时间为"+(endtime-starttime)+"ms点对的最小距离为"+miner);
+    }
+    public double betterminest(Point[] array,int lo,int hi)
+    {
+        if((hi-lo)<=0)
+            return Double.MAX_VALUE;
+        else if((hi-lo)<=1)
+        {
+            merge(array,lo,hi);
+            return dista(array[lo],array[hi]);
+        }
+        else
+        {
+            int mid=(lo+hi)/2;
+            double midx=array[mid].x;
+            double left=betterminest(array,lo,mid);
+            double right=betterminest(array,mid+1,hi);
+            double miner=left<right?left:right;
+            merge(array,lo,hi);
+            Point[] minarray=new Point[hi-lo+1];
+            int k=0;
+            for(int i=lo;i<=hi;i++)
+            {
+                if(Math.abs(midx-array[i].x)<=miner)
+                    minarray[k++]=array[i];
+            }
+            for(int i=0;i<k;i++)
+            {
+                for(int j=i+1;j<i+1+4&&j<k;j++)
+                {
+                    double value=dista(minarray[i],minarray[j]);
+                    if(value<miner)
+                        miner=value;
+                }
+            }
+            return miner;
+        }
+
+    }
+    public void merge(Point[] minarray,int lo,int hi)
+    {
+        Point[] tempt=new Point[hi-lo+1];
+        int mid=(lo+hi)/2;
+        int i=lo;
+        int j=mid+1;
+        int index=0;
+        while(i<=mid&&j<=hi)
+        {
+            if(minarray[i].y<minarray[j].y)
+                tempt[index++]=minarray[i++];
+            else
+                tempt[index++]=minarray[j++];
+        }
+        while (i <= mid)
+            tempt[index++] = minarray[i++];
+        while (j <= hi)
+            tempt[index++] = minarray[j++];
+        index=0;
+        for(int k=lo;k<=hi;k++)
+            minarray[k]=tempt[index++];
+    }
+    public void minest(Point[] array)
+    {
+        long starttime=System.currentTimeMillis();
+        double min=dista(array[0],array[1]);
+        for(int i=0;i<array.length;i++)
+        {
+            for(int j=i+1;j<array.length;j++)
+            {
+                double value=dista(array[i],array[j]);
+                if(value<min)
+                    min=value;
+            }
+        }
+        long endtime=System.currentTimeMillis();
+        System.out.println("蛮力法在数据规模为"+array.length+"的条件下运行时间为"+(endtime-starttime)+"ms点对的最小距离为"+min);
+    }
+    public double dista(Point a,Point b)
+    {
+        //计算两点之间的距离
+        double value=Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
+        return value;
+    }
+    public static void main(String[] args) {
+        Main a=new Main();
+        System.out.println("数据规模为100000的情况下");
+        a.generate(100000);
+        System.out.println("数据规模为200000的情况下");
+        a.generate(200000);
+        System.out.println("数据规模为300000的情况下");
+        a.generate(300000);
+        System.out.println("数据规模为400000的情况下");
+        a.generate(400000);
+        System.out.println("数据规模为500000的情况下");
+        a.generate(500000);
+        System.out.println("数据规模为600000的情况下");
+        a.generate(600000);
+        System.out.println("数据规模为700000的情况下");
+        a.generate(700000);
+        System.out.println("数据规模为800000的情况下");
+        a.generate(800000);
+        System.out.println("数据规模为900000的情况下");
+        a.generate(900000);
+        System.out.println("数据规模为1000000的情况下");
+        a.generate(1000000);
+    }
+}
+class Point
+{
+    double x;
+    double y;
+    public Point()
+    {
+
+    }
+    public Point(double x,double y)
+    {
+        this.x=x;
+        this.y=y;
+    }
+}

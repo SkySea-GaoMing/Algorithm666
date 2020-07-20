@@ -1,0 +1,382 @@
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.LinkedList;
+import java.util.Stack;
+
+public class Main
+{
+    private int V;
+    private int count;
+    private boolean[] marked;
+    private boolean[] onstack;
+    private LinkedList<Integer>[] adj;
+    private Stack<Edge> treestack=new Stack<>();
+    public Main()
+    {
+
+    }
+    public void getVE(int V)
+    {
+        this.V=V;
+        adj=(LinkedList<Integer>[])new LinkedList[V];
+        onstack=new boolean[V];
+        for(int i=0;i<V;i++)
+        {
+            adj[i]=new LinkedList<Integer>();
+        }
+        marked=new boolean[V];
+    }
+    public void addEdge(int v,int w)
+    {
+        adj[v].add(w);
+        adj[w].add(v);
+    }
+    public int DFS()
+    {
+        count=0;
+        for(int i=0;i<V;i++)
+        {
+            if(!marked[i])
+            {
+                dfs(i);
+                count++;
+            }
+        }
+        return count;
+    }
+    public void DFStree()
+    {
+        for(int i=0;i<V;i++)
+        {
+            if(!marked[i])
+                dfstree(i);
+        }
+    }
+    public void dfstree(int v)
+    {
+        marked[v]=true;
+        for(int i=0;i<adj[v].size();i++)
+        {
+            int w=adj[v].get(i);
+            if(!marked[w])
+            {
+                treestack.push(new Edge(v,w));
+                dfstree(w);
+            }
+        }
+    }
+    public void clearmark()
+    {
+        for(int i=0;i<V;i++)
+            marked[i]=false;
+    }
+    public void dfs(int v)
+    {
+        marked[v]=true;
+        for(int i=0;i<adj[v].size();i++)
+        {
+            int w=adj[v].get(i);
+            if(!marked[w])
+                dfs(w);
+        }
+    }
+    public void dfs(int v,int s,int t)
+    {
+        marked[v]=true;
+        for(int i=0;i<adj[v].size();i++)
+        {
+            int w=adj[v].get(i);
+            if((!marked[w])&&!((v==s)&&(w==t)))
+                dfs(w,s,t);
+        }
+    }
+    public static void main(String[] args) throws Exception{
+        File file=new File("C:\\Users\\Huawei\\Desktop\\me.txt");
+        FileInputStream fileInputStream = new FileInputStream(file);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len = 0;
+        while ((len = fileInputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, len);
+        }
+        byte[] data = outputStream.toByteArray();
+        fileInputStream.close();
+        String s=new String(data,"UTF-8");
+        String[] array=s.split("\n");
+        int V=0;
+        int E=0;
+        int index=0;
+        int e=0;
+        Stack<Edge> stack=new Stack<>();
+        Stack<Edge> bridge=new Stack<>();
+        Stack<Edge> bridge2=new Stack<>();
+        Stack<Edge> bridge3=new Stack<>();
+        Stack<Edge> bridge4=new Stack<>();
+        Stack<Edge> treestack=new Stack<Edge>();
+        Stack<Edge> samestack=new Stack<Edge>();
+        Stack<Edge> same=new Stack<>();
+        Main a=new Main();
+        V=Integer.parseInt(array[0]);
+        a.getVE(V);
+
+        for(int i=2;i<array.length;i++)
+        {
+            String[] aa=array[i].split(" ");
+            int v=Integer.parseInt(aa[0]);
+            int w=Integer.parseInt(aa[1]);
+            if(v!=w) {
+                Edge edge=new Edge(v,w);
+                    if(samestack.contains(edge)) {
+                        same.push(edge);
+                    }
+                    else {
+                        samestack.push(edge);
+                        stack.push(edge);
+                        a.addEdge(v,w);
+                    }
+                }
+        }
+        int sum=a.DFS();
+        a.clearmark();
+        int bridgecount=0;
+        System.out.println(sum);
+        //计算连通分量的基准法
+        long start1=System.currentTimeMillis();
+        for(int k=0;k<stack.size();k++)
+        {
+            Edge edge=stack.get(k);
+            if(same.contains(edge))
+                continue;
+            int v=edge.v;
+            int w=edge.w;
+            for(int i=0;i<a.adj[v].size();i++)
+            {
+                if(a.adj[v].get(i)==w)
+                {
+                    a.adj[v].remove(i);
+                    break;
+                }
+            }
+            for(int i=0;i<a.adj[w].size();i++)
+            {
+                if(a.adj[w].get(i)==v)
+                {
+                    a.adj[w].remove(i);
+                    break;
+                }
+            }
+            int num=a.DFS();
+            a.clearmark();
+            if(num>sum)
+            {
+                bridgecount++;
+                bridge.push(edge);
+            }
+            a.adj[v].add(w);
+            a.adj[w].add(v);
+        }
+        long end1=System.currentTimeMillis();
+        System.out.println("计算连通分量的基准法消耗时间为"+(end1-start1)+"ms");
+        System.out.println("该图一共有"+sum+"个连通分支");
+        System.out.println("该图有"+bridgecount+"个桥");
+        bridgecount=0;
+        //节点基准法
+        long start2=System.currentTimeMillis();
+        for(int k=0;k<stack.size();k++)
+        {
+            Edge edge=stack.get(k);
+            if(same.contains(edge))
+                continue;
+            int v=edge.v;
+            int w=edge.w;
+            for(int i=0;i<a.adj[v].size();i++)
+            {
+                if(a.adj[v].get(i)==w)
+                {
+                    a.adj[v].remove(i);
+                    break;
+                }
+            }
+            for(int i=0;i<a.adj[w].size();i++)
+            {
+                if(a.adj[w].get(i)==v)
+                {
+                    a.adj[w].remove(i);
+                    break;
+                }
+            }
+            a.dfs(v);
+            if(!a.marked[w])
+            {
+                bridgecount++;
+                bridge2.push(edge);
+            }
+            a.clearmark();
+            a.adj[v].add(w);
+            a.adj[w].add(v);
+        }
+        long end2=System.currentTimeMillis();
+        System.out.println("计算节点基准基准法消耗时间为"+(end2-start2)+"ms");
+        System.out.println("该图一共有"+sum+"个连通分支");
+        System.out.println("该图有"+bridge2.size()+"个桥");
+        bridgecount=0;
+        long time1=0;
+        long time2=0;
+        //生成树筛边基准法
+        long start3=System.currentTimeMillis();
+        a.DFStree();
+        a.clearmark();
+        treestack=a.treestack;
+        for(int k=0;k<treestack.size();k++)
+        {
+            Edge edge=treestack.get(k);
+            if(same.contains(edge))
+                continue;
+            int v=edge.v;
+            int w=edge.w;
+            long startt=System.currentTimeMillis();
+            a.dfs(v,v,w);
+            if(!a.marked[w])
+            {
+                bridgecount++;
+                bridge3.push(edge);
+            }
+            long endd=System.currentTimeMillis();
+            time1+=(endd-startt);
+            a.clearmark();
+        }
+        long end3=System.currentTimeMillis();
+        System.out.println("计算生成树筛边基准法消耗时间为"+(end3-start3)+"ms");
+        System.out.println("该图一共有"+sum+"个连通分支");
+        System.out.println("该图有"+bridge3.size()+"个桥");
+        bridgecount=0;
+        //生成树筛边并查集
+        long start4=System.currentTimeMillis();
+        for(int k=0;k<treestack.size();k++)
+        {
+            Edge edge=treestack.get(k);
+            if(same.contains(edge))
+            {
+                continue;
+            }
+            int v=edge.v;
+            int w=edge.w;
+                UF uf=new UF(V);
+                for(int i=0;i<a.adj.length;i++)
+                {
+                    for(int j=0;j<a.adj[i].size();j++)
+                    {
+                        if(((i==v)&&(a.adj[i].get(j)==w))||((i==w)&&(a.adj[i].get(j)==v)))
+                            continue;
+                        else
+                            uf.union(i,a.adj[i].get(j));
+                    }
+                }
+                long startt=System.currentTimeMillis();
+                if(!uf.connected(v,w))
+                {
+                    bridgecount++;
+                    bridge4.push(edge);
+                }
+                long endd=System.currentTimeMillis();
+                time2+=(endd-startt);
+
+
+        }
+        long end4=System.currentTimeMillis();
+        System.out.println("计算生成树筛边并查集消耗时间为"+(end4-start4)+"ms");
+        //System.out.println("该图一共有"+sum+"个连通分支");
+        System.out.println("该图有"+bridge4.size()+"个桥");
+        System.out.println("time1时间为"+time1+"ms");
+        System.out.println("time2时间为"+time2+"ms");
+
+    }
+}
+class Edge implements Comparable<Edge>
+{
+    int v;
+    int w;
+    public Edge()
+    {
+
+    }
+    public Edge(int v,int w)
+    {
+        this.v=v;
+        this.w=w;
+    }
+    public boolean equals(Object obj)
+    {
+        Edge that=(Edge)obj;
+        if(((v==that.v)&&(w==that.w))||((v==that.w)&&(w==that.v)))
+            return true;
+        else
+            return false;
+
+    }
+    public int compareTo(Edge that)
+    {
+        if(v==that.v&&w==that.w)
+            return 1;
+        else
+            return -1;
+    }
+}
+class UF
+{
+    private int[] id;
+    private int[] sz;
+    private int count;
+    private int sum;
+    private boolean[] marked;
+    private boolean[] onstack;
+    private Stack<Edge> stack=new Stack<>();
+    public UF(int N)
+    {
+        count=N;
+        id=new int[N];
+        sz=new int[N];
+        marked=new boolean[N];
+        onstack=new boolean[N];
+        for(int i=0;i<N;i++)
+        {
+            id[i]=i;
+            sz[i]=1;
+        }
+    }
+    public int count()
+    {
+        return count;
+    }
+    public boolean connected(int p,int q)
+    {
+        return find(p)==find(q);
+    }
+    private int find(int p)
+    {
+        while(p!=id[p])
+            p=id[p];
+        return p;
+    }
+    public void union(int p,int q)
+    {
+        int i=find(p);
+        int j=find(q);
+        if(i==j)
+        {
+            return ;
+        }
+        if(sz[i]<sz[j])
+        {
+            id[i]=j;
+            sz[j]+=sz[i];
+        }
+        else
+        {
+            id[j]=i;
+            sz[i]+=sz[j];
+        }
+        count--;
+    }
+}

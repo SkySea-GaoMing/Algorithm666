@@ -1,0 +1,352 @@
+import java.util.Arrays;
+
+public class Main
+{
+    //产生随机数组，num是数组容量
+    public int[] generate(int num,int max)
+    {
+        int[] array=new int[num];
+        //Math.random产生[0,1)的小数
+        //以下指定元素范围在[0,max-1]的整数
+        for(int i=0;i<num;i++)
+            array[i]=(int)(Math.random()*max);
+        return array;
+    }
+    //选择排序
+    public void selectionsort(int[] array){
+        /*
+        选择排序的思路就是从待排序的元素中取得最小元素并且
+        与待排起始元素交换，起始点后移重复此前操作直到遍历到倒数第二个元素结束
+         */
+        //获取数组的长度
+        int length=array.length;
+        //总共经过length次比较，包含最后一次退出循环比较
+        //遍历到倒数第二个元素时已确定数组序列可以直接退出
+        for(int i=0;i<length-1;i++)
+        {   //min记录从i到length-1的最小值的索引
+            int min=i;
+            //通过比较更新min，每轮比较length-i次
+            for(int j=i+1;j<length;j++)
+            {
+                if(array[j]<array[min])
+                    min=j;
+            }
+            //如果array[i]为当前最小则不用交换，此时前i+1个元素已有序
+            if(i!=min) {
+                int tempt = array[min];
+                array[min] = array[i];
+                array[i] = tempt;
+            }
+        }
+    }
+    //冒泡排序
+    public void bubblesort(int[] array)
+    {
+        /*
+        冒泡排序的思路就是从数组起始处开始依次比较相邻两个元素，如果后一个小于
+        前一个就进行交换，第一轮比较完成后就能够确定最大的元素并放在数组末尾，
+        重复此前操作每一次遍历都能确定待排序列的最大值并放在最后，很像气泡上浮
+        越往上气泡越大
+         */
+        int length=array.length;
+        //需要比较length次，通过length-1次冒泡就可以完成排序
+        //每次遍历都会确定当前最大值并放在最后，下次遍历就会减少一个元素，只比较
+        //末尾之前的序列
+        //相当于数组是从末尾向起始位置慢慢有序
+        //可以进行优化
+        boolean flag=true;
+        for(int i=1;i<length;i++)
+        {
+            flag=true;
+            //每次遍历都会将最大的数移到末尾
+            for(int j=0;j<length-i;j++)
+            {
+                if(array[j]>array[j+1])
+                {
+                    int tempt=array[j];
+                    array[j]=array[j+1];
+                    array[j+1]=tempt;
+                    flag=false;
+                }
+            }
+            if(flag==true)
+                break;
+        }
+    }
+    //合并排序
+    public void mergesort(int[] array)
+    {
+        /*
+        合并排序的思路就是递归地拆分数组一直到每个子序列都有序
+        然后将子序列两两进行合并，最终数组有序
+         */
+        //先创建一个临时数组在后序中保存排序好的元素重新赋值给原数组
+        int[] tempt=new int[array.length];
+        sort(0,array.length-1,array,tempt);
+    }
+    public void sort(int start,int end,int[] array,int[] tempt)
+    {
+        //不断拆分数组一直到不能拆分
+        if(start<end)
+        {
+            int mid=(start+end)/2;
+            sort(start,mid,array,tempt);
+            sort(mid+1,end,array,tempt);
+            //有序数组两两进行合并
+            merge(start,mid,end,array,tempt);
+        }
+    }
+    public void merge(int start,int mid,int end,int[] array,int[] tempt)
+    {
+        //两个有序子数组合并为一个，先将结果放在临时数组
+        int i=start;
+        int j=mid+1;
+        int index=0;
+        while(i<=mid&&j<=end)
+        {
+            if(array[i]<array[j])
+                tempt[index++]=array[i++];
+            else
+                tempt[index++]=array[j++];
+        }
+        while(i<=mid){
+            tempt[index++] = array[i++];
+        }
+        while(j<=end){
+            tempt[index++] = array[j++];
+        }
+        index=0;
+        //临时数组保存有序合并的数组，重新赋值给原数组
+        while(start<=end)
+            array[start++]=tempt[index++];
+    }
+    //快速排序
+    public void quicksort(int[] array)
+    {
+        /*
+        设定分界值将数组分为两部分，左边的部分和右边的部分又可以独立进行
+        设置分界值递归划分，一直到数组不能够进行划分时左边的部分有序右边的部分
+        有序，此时整个数组有序，与分治算法思想正好相反，先大数组排序后细分排序
+         */
+        sort(array,0,array.length-1);
+    }
+    public void sort(int[] array,int lo,int hi)
+    {
+        //子数组不能再分就结束
+        if(lo>=hi)
+            return ;
+        //确定分界值索引，左边部分和右边部分独立排序
+        int index=partition(array,lo,hi);
+        sort(array,lo,index-1);
+        sort(array,index+1,hi);
+    }
+    public int partition(int[] array,int lo,int hi)
+    {
+        int i=lo;
+        int j=hi+1;
+        //分界值
+        int value=array[lo];
+        while(true)
+        {
+            //从lo+1开始如果小于value继续遍历否则停止准备交换
+            while(array[++i]<=value)
+            {
+                //到末尾时退出防止越界
+                if(i==hi)
+                    break;
+            }
+            //从末尾元素开始向前遍历大于继续遍历否则停止准备交换
+            while(array[--j]>=value)
+            {
+                //防止越界
+                if(j==lo)
+                    break;
+            }
+            //说明已经完成分界
+            if(i>=j)
+                break;
+            //i和j 未相遇之前交换数值，然后继续遍历
+            int tempt=array[i];
+            array[i]=array[j];
+            array[j]=tempt;
+        }
+        //完成分界后j所在位置就是分界处，与分界值交换
+        int tempt=array[j];
+        array[j]=array[lo];
+        array[lo]=tempt;
+        return j;
+    }
+    public void insertsort(int[] array)
+    {
+        /*
+           向已排序的子数组中插入剩余未排序的元素，插入后子数组依然有序
+         */
+        int length=array.length;
+        //一共length次比较，从索引1开始起始之前元素已有序
+        for(int i=1;i<length;i++)
+        {
+          //与前一个元素进行比较如果大于前一个元素就退出循环否则交换后继续与前一个比较
+            for(int j=i;j>0&&(array[j]<array[j-1]);j--)
+            {
+                int tempt=array[j];
+                array[j]=array[j-1];
+                array[j-1]=tempt;
+            }
+        }
+    }
+    public void test(int num)
+    {   long time1=0,time2=0,time3=0,time4=0,time5=0;
+        for(int i=0;i<20;i++)
+        {   //5个数组
+            int[] array1=generate(num,100000);
+            int[] array2= Arrays.copyOf(array1,num);
+            int[] array3=Arrays.copyOf(array1,num);
+            int[] array4=Arrays.copyOf(array1,num);
+            int[] array5=Arrays.copyOf(array1,num);
+            //使用时间方法测定每种排序算法的运行时间单位是ms
+            time1+=testeve("select",array1);
+            time2+=testeve("bubble",array2);
+            time3+=testeve("merge",array3);
+            time4+=testeve("quick",array4);
+            time5+=testeve("insert",array5);
+        }
+        System.out.println("select算法在输入规模为"
+        	+num+" 经过20组数据测试下的平均运行时间为"+time1/20+"ms");
+        System.out.println("bubble算法在输入规模为"
+        	+num+" 经过20组数据测试下的平均运行时间为"+time2/20+"ms");
+        System.out.println("merge算法在输入规模为"
+        	+num+" 经过20组数据测试下的平均运行时间为"+time3/20+"ms");
+        System.out.println("quick算法在输入规模为"
+        	+num+" 经过20组数据测试下的平均运行时间为"+time4/20+"ms");
+        System.out.println("insert算法在输入规模为"
+        	+num+" 经过20组数据测试下的平均运行时间为"+time5/20+"ms");
+
+    }
+    public long testeve(String name,int[] array)
+    {
+
+        long start=System.currentTimeMillis();
+        if(name.equals("select"))
+            selectionsort(array);
+        else if(name.equals("bubble"))
+            bubblesort(array);
+        else if(name.equals("merge"))
+            mergesort(array);
+        else if(name.equals("quick"))
+            quicksort(array);
+        else
+            insertsort(array);
+        long end=System.currentTimeMillis();
+        //验证算法的正确性如果算法有错误就直接退出
+//        if(!issorted(array))
+//        {
+//            System.out.println(name+"排序算法有误");
+//            return 0;
+//        }
+        return end-start;
+    }
+    //通过判断数组是否有序验证算法是否正确
+    public boolean issorted(int[] array)
+    {
+        for(int i=0;i<array.length-1;i++)
+        {
+            if(array[i]>array[i+1])
+                return false;
+        }
+        return true;
+    }
+     public void testheapselect()
+    {
+
+        long sum1=0;
+        long sum2=0;
+        for(int i=0;i<20;i++)
+        {
+            int[] array1=generate(10000000,10000000);
+            int[] array2=Arrays.copyOf(array1,array1.length);
+            sum1+=sel(array1);
+            sum2+=heap(array2);
+        }
+        System.out.println("选择排序在数据量为10000000样本20下的平均运行时间为
+        	"+sum1/20+"ms");
+        System.out.println("堆排序在数据量为10000000样本20下的平均运行时间为
+        	"+sum2/20+"ms");
+
+    }
+    public long heap(int[] array2)
+    {
+        int[] hea=new int[10];
+        long time1=System.currentTimeMillis();
+        for(int i=array2.length-1;i>=0;i--)
+        {
+            adjusth(array2,i,array2.length);
+        }
+        for(int j=array2.length-1;j>array2.length-11;j--)
+        {
+            int temp=array2[j];
+            array2[j]=array2[0];
+            array2[0]=temp;
+            hea[array2.length-j-1]=array2[j];
+            adjusth(array2,0,j);
+        }
+        long end1=System.currentTimeMillis();
+        System.out.println(Arrays.toString(hea));
+        return end1-time1;
+    }
+    public  void adjusth(int[] array2,int i,int length){
+        int temp = array2[i];
+        for(int j=i*2+1;j<length;j=j*2+1){
+            if(j+1<length && array2[j]<array2[j+1]){
+                j++;
+            }
+            if(array2[j] >temp){
+                array2[i] = array2[j];
+                i = j;
+            }else{
+                break;
+            }
+        }
+        array2[i] = temp;
+    }
+    public long sel(int[] array1)
+    {
+        int[] sel=new int[10];
+        long time1=System.currentTimeMillis();
+        for(int i=0;i<10;i++)
+        {
+            int max=i;
+            for(int j=i+1;j<array1.length;j++)
+            {
+                if(array1[max]<array1[j])
+                    max=j;
+            }
+            int tempt=array1[max];
+            array1[max]=array1[i];
+            array1[i]=tempt;
+            sel[i]=tempt;
+        }
+        long end1=System.currentTimeMillis();
+        System.out.println(Arrays.toString(sel));
+        return end1-time1;
+    }
+
+    public static void main(String[] args) {
+        Main a=new Main();
+        System.out.println("输入规模为20000的情况");
+        a.test(20000);
+        System.out.println("---------------");
+        System.out.println("输入规模为40000的情况");
+        a.test(40000);
+        System.out.println("---------------");
+        System.out.println("输入规模为60000的情况");
+        a.test(60000);
+        System.out.println("---------------");
+        System.out.println("输入规模为80000的情况");
+        a.test(80000);
+        System.out.println("---------------");
+        System.out.println("输入规模为100000的情况");
+        a.test(100000);
+        System.out.println("测试堆排序和选择排序");
+        a.testheapselect();
+    }
+}

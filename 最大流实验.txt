@@ -1,0 +1,434 @@
+import java.util.LinkedList;
+import java.util.Scanner;
+
+public class Mainn {
+    int[] tree;
+    int[] minval;
+    int[] depth;
+    int[] dis;
+    int[] num;
+    int[] cur;
+    int[] dcur;
+    int[] p;
+    boolean[] visit;
+    int sum=0;
+    int sum2=0;
+    int sumdays;
+    public boolean bfs(LinkedList<Integer>[] adj,Diredge[] edgearray)
+    {
+        for(int i=0;i<tree.length;i++)
+        {
+            tree[i]=-1;
+            minval[i]=100;
+        }
+        tree[0]=0;
+        LinkedList<Integer> queue=new LinkedList<>();
+        queue.add(0);
+        while(!queue.isEmpty())
+        {
+            int x=queue.peek();
+            queue.poll();
+            if(x==(adj.length-1))
+                return true;
+            for (int i = 0; i < adj[x].size(); i++)
+            {
+                Diredge e = edgearray[adj[x].get(i)];
+                int y = e.ed;
+                if ((tree[y] != -1) || (e.value == 0))
+                        continue;
+                tree[y] = x;
+                minval[y] = e.value > minval[x] ? minval[x] : e.value;
+                queue.add(y);
+            }
+        }
+        return false;
+    }
+    public boolean dinicbfs(LinkedList<Integer>[] adj,Diredge[] edgearray2)
+    {
+        for(int i=0;i<depth.length;i++)
+            depth[i]=0;
+        depth[0]=1;
+        LinkedList<Integer> queue=new LinkedList<>();
+        queue.add(0);
+        while(!queue.isEmpty())
+        {
+            int x=queue.peek();
+            queue.poll();
+            for(int i=0;i<adj[x].size();i++)
+            {
+                Diredge e=edgearray2[adj[x].get(i)];
+                int y=e.ed;
+                if((e.value>0)&&(depth[y]==0))
+                   {
+                        depth[y]=depth[x]+1;
+                        queue.add(y);
+                   }
+
+            }
+        }
+        return depth[depth.length-1]!=0;
+    }
+    public int dinic(int s,LinkedList<Integer>[] adj,Diredge[] edgearray2,int min)
+    {
+        int f=min;
+        if((s==(depth.length-1))||(min==0))
+        {
+            return min;
+        }
+        for(int i=dcur[s];i<adj[s].size();i++)
+        {
+            Diredge e=edgearray2[adj[s].get(i)];
+            int y=e.ed;
+            if(((depth[s]+1)==depth[y])&&(e.value>0))
+            {
+
+                int miner=min>e.value?e.value:min;
+                int val=dinic(y,adj,edgearray2,miner);
+                e.value-=val;
+                dcur[s]=i;
+                for(int j=0;i<adj[y].size();j++)
+                {
+                    Diredge ee=edgearray2[adj[y].get(j)];
+                    if(ee.ed==s)
+                    {
+                        ee.value+=val;
+                        break;
+                    }
+                }
+                min-=val;
+            }
+        }
+        return f-min;
+    }
+    public void update(LinkedList<Integer>[] adj,Diredge[] edgearray) {
+        int min = minval[minval.length - 1];
+        sum += min;
+        int y = minval.length - 1;
+        while (y != 0) {
+            int x = tree[y];
+            for (int i = 0; i < adj[x].size(); i++) {
+                Diredge e = edgearray[adj[x].get(i)];
+                if (e.ed == y) {
+                    e.value -= min;
+                    break;
+                }
+            }
+            for (int i = 0; i < adj[y].size(); i++) {
+                Diredge e = edgearray[adj[y].get(i)];
+                if (e.ed == x) {
+                    e.value += min;
+                    break;
+                }
+            }
+            y = x;
+        }
+    }
+    public boolean isapbfs(LinkedList<Integer>[] adj,Diredge[] edgearray)
+    {
+        LinkedList<Integer> queue=new LinkedList<>();
+        queue.add(adj.length-1);
+        visit[adj.length-1]=true;
+        dis[adj.length-1]=0;
+        while(!queue.isEmpty())
+        {
+            int x=queue.peek();
+            queue.poll();
+            for(int i=0;i<adj[x].size();i++)
+            {
+                //可以直接从反向边开始，容量为0的正向边不存在
+                Diredge e=edgearray[adj[x].get(i)];
+                int ed=e.ed;
+                if(!visit[ed])
+                {
+                    visit[ed] = true;
+                    dis[ed] = dis[x] + 1;
+                    queue.add(ed);
+
+                }
+            }
+        }
+        return visit[0];
+    }
+    public int argu(LinkedList<Integer>[] adj,Diredge[] edgearray)
+    {
+        int x=adj.length-1;
+        int mindf=100;
+        while(x!=0)
+        {
+            Diredge e=edgearray[p[x]];
+            mindf=mindf>e.value?e.value:mindf;
+            x=e.st;
+        }
+        x=adj.length-1;
+        while(x!=0)
+        {
+            Diredge e=edgearray[p[x]];
+            e.value-=mindf;
+            Diredge ee=edgearray[p[x]+1];
+            ee.value+=mindf;
+            x=e.st;
+        }
+        return mindf;
+    }
+    public int maxflow(LinkedList<Integer>[] adj,Diredge[] edgearray)
+    {
+        int flow=0;
+        isapbfs(adj,edgearray);
+        for(int i=0;i<adj.length;i++)
+            num[dis[i]]++;
+        int x=0;
+        while(dis[0]<adj.length)
+        {
+            //走到汇点进行增广
+            if(x==(adj.length-1))
+            {
+                flow+=argu(adj,edgearray);
+                //回到源点
+                x=0;
+            }
+            boolean flag=false;
+            for(int i=cur[x];i<adj[x].size();i++)
+            {
+                Diredge e=edgearray[adj[x].get(i)];
+                if(e.value>0&&(dis[x]==(dis[e.ed]+1)))
+                {
+                    flag=true;
+                    p[e.ed]=adj[x].get(i);
+                    cur[x]=i;
+                    x=e.ed;
+                    break;
+                }
+            }
+            if(!flag)
+            {
+                int m=adj.length-1;
+                for(int i=0;i<adj[x].size();i++)
+                {
+                    Diredge e=edgearray[adj[x].get(i)];
+                    if(e.value>0)
+                        m=m>dis[e.ed]?dis[e.ed]:m;
+                }
+                if(--num[dis[x]]==0)
+                    break;
+                num[dis[x]=m+1]++;
+                cur[x]=0;
+                if(x!=0)
+                    x=edgearray[p[x]].st;
+            }
+        }
+        return flow;
+    }
+    public static void main(String[] args) {
+        Mainn a=new Mainn();
+        Scanner sc=new Scanner(System.in);
+        int n=sc.nextInt();
+        int k=sc.nextInt();
+        int c=sc.nextInt();
+        //一共有多少假日需要排班
+        a.sumdays=sc.nextInt();
+        //所有医生所以可以匹配的所有假期数量
+        int sumh=sc.nextInt();
+        //所有医生可以匹配的总天数
+        int sumd=sc.nextInt();
+        //保存所有节点，医生假期假日和源点汇点都是节点
+        LinkedList<Integer>[] list=new LinkedList[n+a.sumdays+sumh+2];
+        //bfs时保存前驱节点
+        a.tree=new int[n+a.sumdays+sumh+2];
+        //记录增广路径边上的最小流量
+        a.minval=new int[n+a.sumdays+sumh+2];
+        //Dinic算法记录节点的深度
+        a.depth=new int[n+a.sumdays+sumh+2];
+        //ISAP算法保留到汇点距离
+        a.dis=new int[n+a.sumdays+sumh+2];
+        //ISAP算法保留点是否访问
+        a.visit=new boolean[n+a.sumdays+sumh+2];
+        //ISAP算法与汇点最短距离为i的节点数量
+        a.num=new int[n+a.sumdays+sumh+2];
+        a.cur=new int[n+a.sumdays+sumh+2];
+        a.p=new int[n+a.sumdays+sumh+2];
+        a.dcur=new int[n+a.sumdays+sumh+2];
+        //保存所有的边，包括反向边
+        Diredge[] edgearray=new Diredge[a.sumdays*2+sumh*2+n*2+sumd*2];
+        Diredge[] edgearray2=new Diredge[a.sumdays*2+sumh*2+n*2+sumd*2];
+        Diredge[] edgearray3=new Diredge[a.sumdays*2+sumh*2+n*2+sumd*2];
+        for(int i=0;i<list.length;i++)
+            list[i]=new LinkedList<Integer>();
+        //初始化源点s和医生之间的边，一共2n条边
+        for(int i=0;i<n;i++)
+        {
+            edgearray[2*i]=new Diredge(0,i+1,c);
+            edgearray[2*i+1]=new Diredge(i+1,0,0);
+            edgearray2[2*i]=new Diredge(0,i+1,c);
+            edgearray2[2*i+1]=new Diredge(i+1,0,0);
+            edgearray3[2*i]=new Diredge(0,i+1,c);
+            edgearray3[2*i+1]=new Diredge(i+1,0,0);
+            list[0].add(2*i);
+            list[i+1].add(2*i+1);
+        }
+        int index=2*n;
+        int index1=2*n;
+        int index2=2*n;
+        //医生与假期之间的关系
+        for(int i=0;i<n;i++)
+        {
+            //每个医生对应几个假期
+            int sumnh=sc.nextInt();
+            for(int j=0;j<sumnh;j++)
+            {
+                int ed=sc.nextInt();
+                edgearray[index++]=new Diredge(i+1,n+ed,1);
+                edgearray[index++]=new Diredge(n+ed,i+1,0);
+                edgearray2[index1++]=new Diredge(i+1,n+ed,1);
+                edgearray2[index1++]=new Diredge(n+ed,i+1,0);
+                edgearray3[index2++]=new Diredge(i+1,n+ed,1);
+                edgearray3[index2++]=new Diredge(n+ed,i+1,0);
+                list[i+1].add(index-2);
+                list[n+ed].add(index-1);
+            }
+        }
+        index=2*n+2*sumh;
+        index1=2*n+2*sumh;
+        index2=2*n+2*sumh;
+        //假期与假日之间的匹配关系
+        for(int i=0;i<n;i++)
+        {
+            //每个医生匹配的假日
+            int sumday=sc.nextInt();
+            for(int j=0;j<sumday;j++)
+            {
+                int st=sc.nextInt();
+                int ed=sc.nextInt();
+                edgearray[index++]=new Diredge(st+n,n+sumh+ed,1);
+                edgearray[index++]=new Diredge(n+sumh+ed,st+n,0);
+                edgearray2[index1++]=new Diredge(st+n,n+sumh+ed,1);
+                edgearray2[index1++]=new Diredge(n+sumh+ed,st+n,0);
+                edgearray3[index2++]=new Diredge(st+n,n+sumh+ed,1);
+                edgearray3[index2++]=new Diredge(n+sumh+ed,st+n,0);
+                list[st+n].add(index-2);
+                list[n+sumh+ed].add(index-1);
+            }
+        }
+        for(int i=0;i<a.sumdays;i++)
+        {
+            edgearray[2*n+2*sumh+2*sumd+2*i]=new Diredge(i+n+sumh+1,n+a.sumdays+sumh+1,1);
+            edgearray[2*n+2*sumh+2*sumd+2*i+1]=new Diredge(n+sumh+a.sumdays+1,i+n+sumh+1,0);
+            edgearray2[2*n+2*sumh+2*sumd+2*i]=new Diredge(i+n+sumh+1,n+a.sumdays+sumh+1,1);
+            edgearray2[2*n+2*sumh+2*sumd+2*i+1]=new Diredge(n+sumh+a.sumdays+1,i+n+sumh+1,0);
+            edgearray3[2*n+2*sumh+2*sumd+2*i]=new Diredge(i+n+sumh+1,n+a.sumdays+sumh+1,1);
+            edgearray3[2*n+2*sumh+2*sumd+2*i+1]=new Diredge(n+sumh+a.sumdays+1,i+n+sumh+1,0);
+            list[n+sumh+i+1].add(2*n+2*sumh+2*sumd+2*i);
+            list[n+a.sumdays+sumh+1].add(2*n+2*sumh+2*sumd+2*i+1);
+        }
+        long start1=System.currentTimeMillis();
+        while(true)
+        {
+            if(a.bfs(list,edgearray))
+                a.update(list,edgearray);
+            else
+                break;
+        }
+        long end1=System.currentTimeMillis();
+        System.out.println("Edmonds-Karp算法运行时间为"+(end1-start1)+"ms");
+        System.out.println("排班方式为");
+        for(int i=1;i<=n;i++)
+        {
+            System.out.println("医生"+i+"的排班为");
+            for(int j=1;j<list[i].size();j++)
+            {
+                Diredge e=edgearray[list[i].get(j)];
+                if(e.value==0)
+                {
+                    System.out.print((e.ed-n)+" ");
+                    for(int kk=1;kk<list[e.ed].size();kk++)
+                    {
+                        Diredge ee=edgearray[list[e.ed].get(kk)];
+                        if(ee.value==0)
+                            System.out.print(ee.ed-n-sumh);
+                    }
+                    System.out.println();
+                }
+            }
+            System.out.println();
+        }
+        System.out.println("最大流为"+a.sum);
+        System.out.println("----------");
+        long start2=System.currentTimeMillis();
+        while(true)
+        {
+            if(a.dinicbfs(list,edgearray2))
+            {
+                a.sum2+=a.dinic(0,list,edgearray2,100);
+            }
+            else
+                break;
+        }
+        long end2=System.currentTimeMillis();
+        System.out.println("Dinic算法运行时间为"+(end2-start2)+"ms");
+        System.out.println("排班方式为");
+        for(int i=1;i<=n;i++)
+        {
+            System.out.println("医生"+i+"的排班为");
+            for(int j=1;j<list[i].size();j++)
+            {
+                Diredge e=edgearray2[list[i].get(j)];
+                if(e.value==0)
+                {
+                    System.out.print((e.ed-n)+" ");
+                    for(int kk=1;kk<list[e.ed].size();kk++)
+                    {
+                        Diredge ee=edgearray2[list[e.ed].get(kk)];
+                        if(ee.value==0)
+                            System.out.print(ee.ed-n-sumh);
+                    }
+                    System.out.println();
+                }
+            }
+            System.out.println();
+        }
+        System.out.println("最大流为"+a.sum2);
+        long start3=System.currentTimeMillis();
+        int sum3=a.maxflow(list,edgearray3);
+        long end3=System.currentTimeMillis();
+        System.out.println("ISAP算法运行时间为"+(end3-start3)+"ms");
+        System.out.println("排班方式为");
+        for(int i=1;i<=n;i++)
+        {
+            System.out.println("医生"+i+"的排班为");
+            for(int j=1;j<list[i].size();j++)
+            {
+                Diredge e=edgearray3[list[i].get(j)];
+                if(e.value==0)
+                {
+                    System.out.print((e.ed-n)+" ");
+                    for(int kk=1;kk<list[e.ed].size();kk++)
+                    {
+                        Diredge ee=edgearray3[list[e.ed].get(kk)];
+                        if(ee.value==0)
+                            System.out.print(ee.ed-n-sumh);
+                    }
+                    System.out.println();
+                }
+            }
+            System.out.println();
+        }
+        System.out.println("最大流为"+sum3);
+
+    }
+}
+class Diredge
+{
+    int st;
+    int ed;
+    int value;
+    public Diredge()
+    {
+
+    }
+    public Diredge(int st,int ed,int value)
+    {
+        this.st=st;
+        this.ed=ed;
+        this.value=value;
+    }
+}
+
